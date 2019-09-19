@@ -82,6 +82,16 @@ app.get("/sendUserData", function(request, response){
 
 })
 
+app.get('/qrcode', function(req,res){
+    res.render('qrcode');
+})
+
+app.get('/qr', function(req,res){
+    res.render('qrcodeReader');
+})
+
+
+
 app.get("/sayHello", function(request, response){
     var user_name = request.query.user_name;
     response.end("Hello"+user_name+"!");
@@ -114,10 +124,9 @@ app.post('/signup', function(req,res){
 })
 
 app.post('/login', function (req, res) {
-    var userEmail = req.body.userId;
-    console.log(userEmail);
-    var userPassword = req.body.password;
-    console.log(userPassword);
+    var userEmail = req.body.userEmail;
+    var userPassword = req.body.userPassword;
+    console.log(1);
     console.log(userEmail, userPassword);
     var sql = "SELECT * FROM user WHERE user_id = ?";
     connection.query(sql, [userEmail], function (error, results) {
@@ -128,10 +137,13 @@ app.post('/login', function (req, res) {
         // console.log(results);
         console.log(userPassword, results[0].user_password);
         if(userPassword == results[0].user_password){
+            // 토큰 생성
             jwt.sign(
-                {
-                    userName : results[0].name,
-                    userId : results[0].user_id
+                {   
+                    //토큰에 다른 데이터도 추가할 수 있음.
+                    id : results[0].id,
+                    user_id : results[0].user_id,
+                    accessToken : results[0].accessToken
                 },
                 "12345abcdefff",
                 {
@@ -156,10 +168,194 @@ app.get('/login', function(req,res){
     res.render('login');
 })
 
-app.get('/main',auth,function(req,res){
+app.post("/getUser",auth,function(req,res){ // auth를 넣으면 토큰이 있는지를 확인
+    
+    // console.log(req.decoded);
+    console.log(req.decoded);
+    var selectUserSql = "select * from user where id = ?";
+    var userseqnum = "";
+    var userAccessToken = "";
+    connection.query(selectUserSql, [req.decoded.id], function(err, result){
+        if(err){
+            console.log(err);
+            throw err;
+        }else{
+            console.log(result);
+            userseqnum = result[0].userseqnum;
+            userAccessToken = result[0].accessToken;
+            console.log(userseqnum,userAccessToken);
+            //비동기라서 먼저끝나는것부터 처리됌. 그래서 else문 안으로 옮김
+            // async, await, promise 등으로도 해결 가능.
+            var qs = '?user_seq_no=' + userseqnum;
+
+            option = {
+                url : 'https://testapi.open-platform.or.kr/user/me'+qs,
+                method : "GET",
+                headers : {
+                    Authorization : 'Bearer '+userAccessToken
+                }
+            }
+            // "/balance"주소로 post방식으로 요청이 들어오면 testapi서버에 또다시 형식에 맞춘 요청을 날려 내가 원하는 값들을 받아온다.
+            //postman으로 post 날려서 테스트. 브라우저에서는 get밖에 못함.
+            request(option, function (error, response, body) {
+                console.log(body); // 계좌 내용 다 찍힘
+                if(error){
+                    console.error(error);
+                    throw error;
+                }
+                else{
+                    // res.json(1);
+                    // res.json(body); 이렇게하면 에러남. 파싱문제
+                    var resObj = JSON.parse(body);
+                    res.json(resObj);
+                }
+            });
+        }
+    })
+
+    
+})
+
+app.post('/balance',function(req,res){
+    var finusenum = req.body.finNum;
+    var selectUserSql = "SELECT * FROM fintech.user WHERE user_id = ?";
+    connection.query(selectUserSql,[req.decoded.user_id], function(err, result){
+        var accessToken = result[0].accessToken;
+        var qs = "?fintech_use_num="+finusenum+"&tran_dtime=20190918170159"
+        option = {
+            url : "https://testapi.open-platform.or.kr/v1.0/account/balance"+qs,
+            method : "GET",
+            headers : {
+                Authorization : "Bearer " + accessToken
+            },
+        }
+        request(option, function (error, response, body) {
+            // console.log(body);
+            if(error){
+                console.error(error);
+                throw error;
+            }
+            else {
+                console.log(body);
+                var resultObj = JSON.parse(body);
+                res.json(resultObj);
+            }
+        });
+    })
+ });
+
+
+
+app.get('/main',function(req,res){
     res.render('main');
 })
 
+app.get('/balance',function(req,res){
+    res.render('balance');
+})
+
+app.post('/transaction',auth,function(req,res){
+
+    var selectUserSql = "select * from user where user_id = ?";
+    var finusenum = req.body.finNum;
+    connection.query(selectUserSql, [req.decoded.user_id], function(err, result){
+        if(err){
+            console.log(err);
+            throw err;
+        }else{
+            console.log(result);
+
+            var userAccessToken = result[0].accessToken;
+            // console.log(userseqnum,userAccessToken);
+            var qs = "?fintech_use_num=" + finusenum
+            +"&inquiry_type=A"
+            +"&from_date=20190101"
+            +"&to_date=20190101"
+            +"&sort_order=D"
+            +"&page_index=1"
+            +"&tran_dtime=20190918170159";
+
+            option = {
+                url : "https://testapi.open-platform.or.kr/v1.0/account/transaction_list"+qs,
+                method : "GET",
+                headers : {
+                    Authorization : "Bearer "+userAccessToken
+                }
+            }
+            // "/balance"주소로 post방식으로 요청이 들어오면 testapi서버에 또다시 형식에 맞춘 요청을 날려 내가 원하는 값들을 받아온다.
+            //postman으로 post 날려서 테스트. 브라우저에서는 get밖에 못함.
+            request(option, function (error, response, body) {
+                console.log(body); // 계좌 내용 다 찍힘
+                if(error){
+                    console.error(error);
+                    throw error;
+                }
+                else{
+                    // res.json(1);
+                    // res.json(body); 이렇게하면 에러남. 파싱문제
+                    var resObj = JSON.parse(body);
+                    console.log("해결!!!");
+                    res.json(resObj);
+                }
+            });
+        }
+    })
+})
+
+app.post('/withdrawQR',function(req,res){
+    var selectUserSql = "select * from user where user_id = ?";
+    console.log(req.decoded);
+    var finusenum = req.body.qrFin;
+    connection.query(selectUserSql, [req.decoded.user_id], function(err, result){
+        if(err){
+            console.log(err);
+            throw err;
+        }else{
+            console.log(result[0]);
+
+            var userAccessToken = result[0].accessToken;
+            // console.log(userseqnum,userAccessToken);
+            // var qs = "?fintech_use_num=" + finusenum
+            // +"&inquiry_type=A"
+            // +"&from_date=20190101"
+            // +"&to_date=20190101"
+            // +"&sort_order=D"
+            // +"&page_index=1"
+            // +"&tran_dtime=20190918170159";
+
+            option = {
+                url : "https://testapi.open-platform.or.kr/v1.0/transfer/withdraw",
+                method : "POST",
+                contentType : "application/json; charset=UTF-8",
+                headers : {
+                    Authorization : "Bearer "+userAccessToken
+                },
+                form:{
+                    dps_print_content : "쇼핑몰환불",
+                    fintech_use_num : finusenum,
+                    tran_amt : 10000,
+                    tran_dtime : "20190918170159"
+                }
+            }
+            // "/balance"주소로 post방식으로 요청이 들어오면 testapi서버에 또다시 형식에 맞춘 요청을 날려 내가 원하는 값들을 받아온다.
+            //postman으로 post 날려서 테스트. 브라우저에서는 get밖에 못함.
+            request(option, function (error, response, body) {
+                // console.log(body); // 계좌 내용 다 찍힘
+                if(error){
+                    console.error(error);
+                    throw error;
+                }
+                else{
+                    // res.json(1);
+                    // res.json(body); 이렇게하면 에러남. 파싱문제
+                    var resObj = JSON.parse(body);
+                    console.log("해결!!!");
+                    res.json(resObj);
+                }
+            });
+        }
+    })
+})
 app.listen(port);
 console.log("Listeing on port",port);
 //jwt 토큰을 이용. session이용 x

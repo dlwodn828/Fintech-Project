@@ -24,12 +24,13 @@
     </div>
 </div>
 <script>
-    var jwtToken = sessionStorage.getItem('jwtToken');
+    // $(document).ready(function(){
+        var jwtToken = sessionStorage.getItem('jwtToken'); // 토큰이 있어서 auth는 미들웨어같은것. 
         $.ajax({
-            url:'http://localhost:3000/getUser',
+            url:'http://localhost:8080/getUser',
             type : 'POST',
             headers : {
-                'x-access-token' : jwtToken
+                'x-access-token' : jwtToken //
             },
             data : {
             },
@@ -40,28 +41,39 @@
                     var resultElement = resultList[i];
                     $("#cardList").append(
                         '    <div data-height="150" style="height : 150px" class="caption caption-margins round-medium shadow-large">\n' +
-        '        <div class="caption-center right-15 top-15 text-right">\n' +
-        '            <a href="/balance?fin_use_num='+resultElement.fintech_use_num+'" class="back-button button button-xs button-round-huge bg-highlight">잔액조회</a>\n' +
-        '            <a href="#" class="back-button button button-xs button-round-huge bg-highlight">결제</a>\n' +
-        '        </div>\n' +
-        '        <div class="caption-center left-15 text-left">\n' +
-        '            <h1 class="color-white bolder">'+resultElement.account_alias+'</h1>\n' +
-        '            <p class="under-heading color-white opacity-90 bottom-0">\n' +
-        '                ' + resultElement.fintech_use_num +
-        '            </p>\n' +
-        '        </div>\n' +
-        '        <div class="caption-overlay bg-black opacity-70"></div>\n' +
-        '        <div class="caption-bg bg-18"></div>\n' +
-        '    </div>\n'
-​
-                    )
+        '<div class="caption-center right-15 top-15 text-right">\n' +
+        '<a href="/balance?fin_use_num='+resultElement.fintech_use_num+'" class="back-button button button-xs button-round-huge bg-highlight">잔액조회</a>\n' +
+        '<a href="/qrcode?fin_use_num='+resultElement.fintech_use_num+'" class="back-button button button-xs button-round-huge bg-highlight">결제</a>\n' +
+        '</div>\n' +
+        '<div class="caption-center left-15 text-left">\n' +
+        '<h1 class="color-white bolder">'+resultElement.account_alias+'</h1>\n' +
+        '<p class="under-heading color-white opacity-90 bottom-0">\n' +
+        resultElement.fintech_use_num +
+        '</p>\n' +
+        '</div>\n' +
+        '<div class="caption-overlay bg-black opacity-70"></div>\n' +
+        '<div class="caption-bg bg-18"></div>\n' +
+        '</div>\n');
                 }
             }
         })
-​
+    // });
+    $("#balanceBtn").click(function(){
+        $.ajax({
+            url:'http://localhost:8080/balance',
+            type:'POST',
+            success:function(data){
+                console.log(data);
+                if(data==1){
+                    alert('계좌조회');
+                }
+            }
+
+        })
+})
 </script>
 <% include ./hf/footer.ejs %>
-<html>
+<!-- <html>
     <script src="https://code.jquery.com/jquery-2.2.4.js"
     integrity="sha256-iT6Q9iMJYuQiMWNd9lDyBUStIq/8PuOW33aOqmvFpqI="
     crossorigin="anonymous"></script>
@@ -85,4 +97,4 @@
         });
         
     </script>
-</html>
+</html> -->

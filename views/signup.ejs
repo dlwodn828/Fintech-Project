@@ -88,7 +88,7 @@
                                 <button type="submit">LOGIN</button>
                         </form> -->
                         <button type="button" id="joinBtn" style="width:100%" class="button button-full button-m shadow-large button-round-small bg-green1-dark top-10 bottom-0">JOIN</button>
-                        <a href="login" id="loginBtn" style="width:100%" class="button button-full button-m shadow-large button-round-small bg-green1-dark top-10 bottom-0">LOGIN</a>
+                        <form action="/login" method="GET"><button type="submit" id="loginBtn" style="width:100%" class="button button-full button-m shadow-large button-round-small bg-green1-dark top-10 bottom-0">LOGIN</button></form>
                     </div>
                 </div>
                 
@@ -267,24 +267,15 @@
         })
     })
 
-    // $("#loginBtn").click(function(){
-
-    //     $.ajax({
-    //         url:'http://localhost:8080/login',
-    //         type : 'POST',
-    //         data : {
-    //             userEmail : $('#userEmail').val(),
-    //             userPassword : $('#userPassword').val(),
-    //             accessToken : $('#accessToken').val(),
-    //             refreshToken : $('#refreshToken').val(),
-    //             useseqnum : $('#useseqnum').val()
-    //         },
-    //         success:function(data){
-    //             console.log(data);
-    //             // alert('회원가입이 완료되었습니다!');
-    //         }
-    //     })
-})
+//     $("#loginBtn").click(function(){
+//         $.ajax({
+//             url:'http://localhost:8080/login',
+//             type : 'GET',
+//             success:function(data){
+//                 console.log("로그인 페이지로 이동");
+//             }
+//         })
+// })
 
     
 

@@ -28,7 +28,7 @@ const authMiddleware = (req, res, next) => {
         })
     }
 
-    p.then((decoded)=>{
+    p.then((decoded)=>{ //request 바디에 추가되어서 옴.
         req.decoded = decoded
         next()
     }).catch(onError)

@@ -62,7 +62,7 @@
                         <button type="button" id="loginBtn" class="button button-full button-m shadow-large button-round-small bg-green1-dark top-30 bottom-0">LOGIN</button>
                     </div>
                 </div>
-
+                <!-- <button type="button" id="balanceBtn">계좌조회</button> -->
                     
             </div>
         </div>
@@ -199,26 +199,37 @@
 <script type="text/javascript" src="scripts/custom.js"></script>
 <script>
 $("#loginBtn").click(function(){
-    console.log("error test");
-    // var a = $('#userId').val();
-    // var b = $('#password').val();
-    // console.log(a);
-    // $.ajax({
-    //     url:'http://localhost:8080/login',
-    //     type : 'POST',
-    //     data : {
-    //         userEmail : $('#userId').val(),
-    //         userPassword : $('#password').val(),
-    //     },
-    //     success:function(data){
-    //         console.log(data);
-    //         if(data==1){
-    //             alert('로그인이 완료되었습니다!');
-    //         }
-    //         sessionStorage.setItem('jwtToken', data);   
-    //         window.location.href = "/main";
-    //     }   
-    // })
+    // console.log("error test");
+    var a = $('#userId').val();
+    var b = $('#password').val();
+    console.log("id");
+    
+    $.ajax({
+        url:'http://localhost:8080/login',
+        type : 'POST',
+        // contentType: "charset=utf-8",
+        data : {
+            userEmail : $('#userId').val(),
+            userPassword : $('#password').val(),
+        },
+        success:function(data){
+            // console.log(data);
+            if(data==1){
+                alert('로그인이 완료되었습니다!');
+            
+            }
+            sessionStorage.setItem('jwtToken', data);   
+            window.location.href = "/main";
+        },
+        error:function(request,status,error){
+            if(error){
+                throw error;
+            }
+            alert("code:"+request.status+"\n"+"message:"+request.responseText+"\n"+"error:"+error);
+       }
+    })
 })
+
+
 </script>
 </body>

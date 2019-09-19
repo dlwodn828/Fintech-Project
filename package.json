@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
+    "instascan": "^1.0.0",
     "jsonwebtoken": "^8.5.1",
     "mysql": "github:mysqljs/mysql",
     "request": "^2.88.0",
