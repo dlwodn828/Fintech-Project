@@ -3,6 +3,7 @@
 <video id="preview" style="width: 100%; height:100%; margin-top: 25vh"  ></video>
 <script type="text/javascript">
     let scanner = new Instascan.Scanner({ video: document.getElementById('preview') });
+    console.log(sessionStorage.getItem('jwtToken'));
     scanner.addListener('scan', function (content) {
         console.log(content)
         $.ajax({
@@ -15,12 +16,16 @@
             qrFin : content
         },
         success: function (data) {
-            // console.log(data);
+            console.log("출금이체 응답 메세지 : ",data);
+
             if(data == 1){
                 alert('결제가 완료되었습니다.');
             }
-            else {
-                alert('결제가 미승인되었습니다')
+            else if(data==2){
+                alert('QR코드 번호가 잘못되었습니다.')
+            }
+            else{
+                alert('결제가 미승인되었습니다');
             }
         }
     })

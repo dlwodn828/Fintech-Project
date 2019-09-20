@@ -147,7 +147,7 @@ app.post('/login', function (req, res) {
                 },
                 "12345abcdefff",
                 {
-                    expiresIn : '1d',
+                    expiresIn : '1d', //토큰이 1day짜리.
                     issuer : 'fintech.admin',
                     subject : 'user.login.info'
                 },
@@ -302,10 +302,11 @@ app.post('/transaction',auth,function(req,res){
     })
 })
 
-app.post('/withdrawQR',function(req,res){
+app.post('/withdrawQR',auth,function(req,res){
     var selectUserSql = "select * from user where user_id = ?";
     console.log(req.decoded);
     var finusenum = req.body.qrFin;
+    console.log("핀유즈넘:",finusenum);
     connection.query(selectUserSql, [req.decoded.user_id], function(err, result){
         if(err){
             console.log(err);
@@ -314,28 +315,20 @@ app.post('/withdrawQR',function(req,res){
             console.log(result[0]);
 
             var userAccessToken = result[0].accessToken;
-            // console.log(userseqnum,userAccessToken);
-            // var qs = "?fintech_use_num=" + finusenum
-            // +"&inquiry_type=A"
-            // +"&from_date=20190101"
-            // +"&to_date=20190101"
-            // +"&sort_order=D"
-            // +"&page_index=1"
-            // +"&tran_dtime=20190918170159";
 
             option = {
                 url : "https://testapi.open-platform.or.kr/v1.0/transfer/withdraw",
                 method : "POST",
-                contentType : "application/json; charset=UTF-8",
                 headers : {
-                    Authorization : "Bearer "+userAccessToken
+                    Authorization : "Bearer "+userAccessToken,
+                    "Content-Type" : "application/json; charset=UTF-8"
                 },
-                form:{
-                    dps_print_content : "쇼핑몰환불",
-                    fintech_use_num : finusenum,
-                    tran_amt : 10000,
-                    tran_dtime : "20190918170159"
-                }
+                json:{
+                    "dps_print_content" : "쇼핑몰",
+                    "fintech_use_num" : finusenum,//"199004697057725522315571",
+                    "tran_amt" : "10000",
+                    "tran_dtime" : "20190918170159"
+                 }
             }
             // "/balance"주소로 post방식으로 요청이 들어오면 testapi서버에 또다시 형식에 맞춘 요청을 날려 내가 원하는 값들을 받아온다.
             //postman으로 post 날려서 테스트. 브라우저에서는 get밖에 못함.
@@ -348,14 +341,72 @@ app.post('/withdrawQR',function(req,res){
                 else{
                     // res.json(1);
                     // res.json(body); 이렇게하면 에러남. 파싱문제
-                    var resObj = JSON.parse(body);
-                    console.log("해결!!!");
-                    res.json(resObj);
+                    var resObj = body;
+                    console.log("resObj",resObj);
+                    if(resObj.rsp_code == "A0002" || resObj.rsp_code == "A0000"){
+                        res.json(1);
+                        // console.log("해결!!!");
+                        // res.json(resObj);
+                    }else if(resObj.rsp_code=="A0005"){
+                        res.json(2);
+                    }else{
+                        res.json(3);
+                    }
+                    // console.log(resObj);
                 }
             });
         }
     })
 })
+
+//입금이체
+// app.post('/withdrawQR',auth,function(req,res){
+//     var selectUserSql = "select * from user where user_id = ?";
+//     console.log(req.decoded);
+//     var finusenum = req.body.qrFin;
+//     connection.query(selectUserSql, [req.decoded.user_id], function(err, result){
+//         if(err){
+//             console.log(err);
+//             throw err;
+//         }else{
+//             console.log(result[0]);
+
+//             var userAccessToken = result[0].accessToken;
+//             option = {
+//                 url : "https://testapi.open-platform.or.kr/v1.0/transfer/deposit",
+//                 method : "POST",
+//                 contentType : "application/json; charset=UTF-8",
+//                 headers : {
+//                     Authorization : "Bearer "+userAccessToken
+//                 },
+//                 form:{
+//                     wd_pass_phrase : "NONE",
+//                     wd_print_content : "출금계좌인자내역",
+//                     req_cnt : "25",
+
+//                 }
+//             }
+//             // "/balance"주소로 post방식으로 요청이 들어오면 testapi서버에 또다시 형식에 맞춘 요청을 날려 내가 원하는 값들을 받아온다.
+//             //postman으로 post 날려서 테스트. 브라우저에서는 get밖에 못함.
+//             request(option, function (error, response, body) {
+//                 // console.log(body); // 계좌 내용 다 찍힘
+//                 if(error){
+//                     console.error(error);
+//                     throw error;
+//                 }
+//                 else{
+//                     // res.json(1);
+//                     // res.json(body); 이렇게하면 에러남. 파싱문제
+//                     var resObj = JSON.parse(body);
+//                     console.log("해결!!!");
+//                     res.json(resObj);
+//                 }
+//             });
+//         }
+//     })
+// })
+
+
 app.listen(port);
 console.log("Listeing on port",port);
 //jwt 토큰을 이용. session이용 x
