@@ -5,10 +5,11 @@ app.set('views', __dirname+'/views');
 app.set('view engine', 'ejs');
 app.engine('html',require('ejs').renderFile);
 app.use(express.json());
-app.use(express.urlencoded({extended : false}));
+app.use(express.urlencoded({exRtended : false}));
 var request = require('request');
 var port = process.env.PORT || 8080;
 var auth = require("./auth");
+
 app.use(express.static(__dirname + '/public'));
 
 var mysql      = require('mysql');
@@ -28,6 +29,7 @@ connection.connect();
 
 app.get("/", function(request, response){
     // response.end("Hello!");
+    console.log("111");
     response.render('main');
 });
 
@@ -359,54 +361,172 @@ app.post('/withdrawQR',auth,function(req,res){
     })
 })
 
-//입금이체
-// app.post('/withdrawQR',auth,function(req,res){
-//     var selectUserSql = "select * from user where user_id = ?";
-//     console.log(req.decoded);
-//     var finusenum = req.body.qrFin;
-//     connection.query(selectUserSql, [req.decoded.user_id], function(err, result){
-//         if(err){
-//             console.log(err);
-//             throw err;
-//         }else{
-//             console.log(result[0]);
 
-//             var userAccessToken = result[0].accessToken;
-//             option = {
-//                 url : "https://testapi.open-platform.or.kr/v1.0/transfer/deposit",
-//                 method : "POST",
-//                 contentType : "application/json; charset=UTF-8",
-//                 headers : {
-//                     Authorization : "Bearer "+userAccessToken
-//                 },
-//                 form:{
-//                     wd_pass_phrase : "NONE",
-//                     wd_print_content : "출금계좌인자내역",
-//                     req_cnt : "25",
+//npm install nodemon -g 자동 재시작
+//npm i morgan
+app.get("/deposit", function(req,res){
+    res.render('deposit');
+})
+app.get('/kakao', function(req,res){
+    option={
 
-//                 }
-//             }
-//             // "/balance"주소로 post방식으로 요청이 들어오면 testapi서버에 또다시 형식에 맞춘 요청을 날려 내가 원하는 값들을 받아온다.
-//             //postman으로 post 날려서 테스트. 브라우저에서는 get밖에 못함.
-//             request(option, function (error, response, body) {
-//                 // console.log(body); // 계좌 내용 다 찍힘
-//                 if(error){
-//                     console.error(error);
-//                     throw error;
-//                 }
-//                 else{
-//                     // res.json(1);
-//                     // res.json(body); 이렇게하면 에러남. 파싱문제
-//                     var resObj = JSON.parse(body);
-//                     console.log("해결!!!");
-//                     res.json(resObj);
-//                 }
-//             });
-//         }
-//     })
-// })
+    }
+});
+app.post("/deposit", function(req, res){
+    option = {
+        url : 'https://testapi.open-platform.or.kr/oauth/2.0/token',
+        method : "POST",
+        contentType: "application/x-www-form-urlencoded; charset=UTF-8",
+        form : {
+            client_id : "l7xxaec048f3b32f40858f0050a52f36e39f",
+            client_secret : "f5a996e713744a2f97ee2bc098a29383",
+            scope : "oob",
+            grant_type : "client_credentials"
+        }
+    }
+    request(option, function (error, response, body) {
+        console.log(body);
+        if(error){
+            console.error(error);
+            throw error;
+        }
+        else{
+            var accessToken = JSON.parse(body);
+            console.log("토큰",accessToken.access_token);
 
 
+            var account = req.body.account;
+            var amount = req.body.amount;
+
+            option = {
+                url : "https://testapi.open-platform.or.kr/v1.0/transfer/deposit",
+                method : "POST",
+                headers : {
+                    Authorization : "Bearer "+accessToken.access_token,
+                    "Content-Type" : "application/json; charset=UTF-8"
+                },
+                json:{
+                    "wd_pass_phrase" : "NONE",
+                    "wd_print_content" : "환불금액",
+                    "name_check_option" : "off",
+                    "req_cnt" : "1",
+                    "req_list" : [
+                        {
+                            "tran_no" : "1",
+                            "fintech_use_num" : "199004697057725522315571",//DB에 있는 값을 가져와서 넣으면 된다.
+                            "print_content" : "쇼핑몰환불",
+                            "tran_amt" : "10000"
+                        }
+                    ],
+                    "tran_dtime" : "20190918170159"
+                    }
+            }
+            // "/balance"주소로 post방식으로 요청이 들어오면 testapi서버에 또다시 형식에 맞춘 요청을 날려 내가 원하는 값들을 받아온다.
+            //postman으로 post 날려서 테스트. 브라우저에서는 get밖에 못함.
+            request(option, function (error, response, body) {
+                // console.log(body); // 계좌 내용 다 찍힘
+                if(error){
+                    console.error(error);
+                    throw error;
+                }
+                else{
+                    var resObj = body;
+                    console.log("resObj",resObj);
+                    if(resObj.rsp_code == "A0002" || resObj.rsp_code == "A0000"){
+                        res.json(1);
+                        // console.log("해결!!!");
+                        // res.json(resObj);
+                    }else if(resObj.rsp_code=="A0005"){
+                        res.json(2);
+                    }else{
+                        res.json(3);
+                    }
+                    // console.log(resObj);
+                }
+            });
+        }
+    });
+});
+
+app.post("/deposit2", function(req, res){
+    option = {
+        url : 'https://testapi.open-platform.or.kr/oauth/2.0/token',
+        method : "POST",
+        contentType: "application/x-www-form-urlencoded; charset=UTF-8",
+        form : {
+            client_id : "l7xxaec048f3b32f40858f0050a52f36e39f",
+            client_secret : "f5a996e713744a2f97ee2bc098a29383",
+            scope : "oob",
+            grant_type : "client_credentials"
+        }
+    }
+    request(option, function (error, response, body) {
+        console.log(body);
+        if(error){
+            console.error(error);
+            throw error;
+        }
+        else{
+            var accessToken = JSON.parse(body);
+            console.log("토큰",accessToken.access_token);
+
+
+            var account = req.body.account;
+            var amount = req.body.amount;
+            var depName = req.body.depName;
+
+            
+            option = {
+                url : "https://testapi.open-platform.or.kr/v1.0/transfer/deposit",
+                method : "POST",
+                headers : {
+                    Authorization : "Bearer "+accessToken.access_token,
+                    "Content-Type" : "application/json; charset=UTF-8"
+                },
+                json:{
+                    "wd_pass_phrase" : "NONE",
+                    "wd_print_content" : "환불금액",
+                    "name_check_option" : "off",
+                    "req_cnt" : "1",
+                    "req_list" : [
+                        {
+                            "tran_no" : "1",
+                            "bank_code_std" : "097",
+                            "account_holder_name" : depName,
+                            "account_num" : account,//DB에 있는 값을 가져와서 넣으면 된다.
+                            "print_content" : "쇼핑몰환불",
+                            "tran_amt" : amount
+                        }
+                    ],
+                    "tran_dtime" : "20190918170159"
+                    }
+            }
+            // "/balance"주소로 post방식으로 요청이 들어오면 testapi서버에 또다시 형식에 맞춘 요청을 날려 내가 원하는 값들을 받아온다.
+            //postman으로 post 날려서 테스트. 브라우저에서는 get밖에 못함.
+            request(option, function (error, response, body) {
+                // console.log(body); // 계좌 내용 다 찍힘
+                if(error){
+                    console.error(error);
+                    throw error;
+                }
+                else{
+                    var resObj = body;
+                    console.log("resObj",resObj);
+                    if(resObj.rsp_code == "A0002" || resObj.rsp_code == "A0000"){
+                        res.json(1);
+                        // console.log("해결!!!");
+                        // res.json(resObj);
+                    }else if(resObj.rsp_code=="A0005"){
+                        res.json(2);
+                    }else{
+                        res.json(3);
+                    }
+                    // console.log(resObj);
+                }
+            });
+        }
+    });
+});
 app.listen(port);
 console.log("Listeing on port",port);
 //jwt 토큰을 이용. session이용 x

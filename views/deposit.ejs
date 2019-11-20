@@ -1,0 +1,36 @@
+<% include ./hf/header.ejs %>
+<body>
+    <br><br><br><br><br><br><br>
+    계좌 <input type="text" id="account">
+    금액 <input type="text" id="amount">
+    예금주 <input type="text" id="depName">
+    <button type="button" id="depositBtn">이체</button>
+</body>
+<script>
+    $("#depositBtn").click(function(){
+        console.log("clicked!");
+        var account = $('#account').val();
+        var amount = $('#amount').val();
+        var depName = $('#depName').val();
+        $.ajax({
+            url: 'http://localhost:8080/deposit2',
+            type: 'POST',
+            data: {
+                account : account,
+                amount : amount,
+                depName : depName
+            },
+        success: function (data) {
+            console.log(data);
+            if(data == 1){
+                alert('결제가 완료되었습니다.');
+            }
+            else {
+                alert('결제가 미승인되었습니다')
+            }
+        }
+    })
+    })
+</script>
+
+<% include ./hf/footer.ejs %>
